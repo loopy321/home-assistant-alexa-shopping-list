@@ -121,17 +121,22 @@ async def _cmd_reset():
     return True, None
 
 
-async def _cmd_is_authenticated():
-    recent = _get_config_value('auth_checked_time', 0)
-    time_diff = _time_now() - recent
+async def _cmd_is_authenticated(arguments=None):
+    arguments = arguments or {}
+    force = arguments.get('force', False)
+    
+    if not force:
+        recent = _get_config_value('auth_checked_time', 0)
+        time_diff = _time_now() - recent
 
-    if time_diff < 86400:
-        return True, None
+        if time_diff < 86400:
+            return True, None
 
     instance = _start_alexa()
 
     if instance.requires_login() == True:
         print("\nAuthenticated: No")
+        _set_config_value("auth_checked_time", 0)
         result = False, None
     else:
         print("\nAuthenticated: Yes")
@@ -244,7 +249,7 @@ async def _route_command(command, arguments={}):
     
     # Authentication
     if command == "authenticated":
-        return await _cmd_is_authenticated()
+        return await _cmd_is_authenticated(arguments)
     if command == "login":
         return await _cmd_login(arguments)
     

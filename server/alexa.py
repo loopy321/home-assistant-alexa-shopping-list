@@ -147,6 +147,14 @@ class AlexaShoppingList:
 
 
     def requires_login(self):
+        try:
+            self._ensure_driver_is_on_alexa_list()
+        except NotAuthenticatedError:
+            self.is_authenticated = False
+            return True
+        except Exception:
+            pass
+
         if 'ap/signin' in self.driver.current_url:
             return True
 

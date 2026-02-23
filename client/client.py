@@ -114,8 +114,8 @@ class WebSocketClient:
         await self._cmd_config_set("amazon_url", amazon_url, False)
     
 
-    async def _server_authenticated(self):
-        response = await self._send_command("authenticated")
+    async def _server_authenticated(self, force=False):
+        response = await self._send_command("authenticated", force=force)
         if self._command_successful(response):
             return self._command_result(response)
         return False
@@ -236,8 +236,8 @@ class WebSocketClient:
 
 
     async def _cmd_status(self):
-        print("Checking server authentication status...")
-        is_auth = await self._server_authenticated()
+        print("Checking server authentication status (this might take a few seconds)...")
+        is_auth = await self._server_authenticated(force=True)
         if is_auth:
             print("Server is AUTHENTICATED \u2705")
         else:
