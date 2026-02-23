@@ -34,8 +34,5 @@ class AlexaShoppingListAuthSensor(BinarySensorEntity):
         return self.alexa.is_authenticated
 
     async def async_update(self) -> None:
-        """Fetch new state data for the sensor.
-        This is a passive sensor; its state is updated during regular syncs,
-        so we just reflect the current `alexa.is_authenticated` state.
-        """
-        pass
+        """Fetch new state data for the sensor."""
+        await self.alexa.get_server_auth_cached_state()

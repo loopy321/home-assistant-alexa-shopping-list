@@ -80,8 +80,21 @@ class AlexaShoppingListSync:
     async def server_is_authenticated(self):
         response = await self._send_command("authenticated")
         if self._command_successful(response):
-            return self._command_result(response)
+            result = self._command_result(response)
+            self.is_authenticated = bool(result)
+            return self.is_authenticated
         return False
+    
+    async def get_server_auth_cached_state(self):
+        try:
+            response = await self._send_command("config_get", key="auth_checked_time")
+            if self._command_successful(response):
+                result = self._command_result(response)
+                self.is_authenticated = bool(result and int(result) > 0)
+                return self.is_authenticated
+            return False
+        except Exception:
+            return self.is_authenticated
 
     # ============================================================
     # Cache
