@@ -18,6 +18,7 @@ class AlexaShoppingListSync:
         self._hasl_refresh = hasl_refresh
         self._setup_cached_list(sync_mins * 60)
         self._sync_lock = asyncio.Lock()
+        self.is_authenticated = True
 
     # ============================================================
     # Helpers
@@ -38,7 +39,10 @@ class AlexaShoppingListSync:
 
     def _command_successful(self, response):
         if "error" in response and response['error'] != None:
+            if response['error'] == "Not authenticated":
+                self.is_authenticated = False
             return False
+        self.is_authenticated = True
         return True
     
 

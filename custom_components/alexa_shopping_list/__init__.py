@@ -35,7 +35,7 @@ async def async_setup_entry(hass, entry):
     
     # hass.bus.async_listen("shopping_list_updated", alexa.homeassistant_shopping_list_updated)
     hass.data[DOMAIN][entry.entry_id] = alexa
-    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
+    await hass.config_entries.async_forward_entry_setups(entry, ["sensor", "binary_sensor"])
 
     services = AlexaServices(alexa, _LOGGER, hass)
     hass.services.async_register(DOMAIN, SERVICE_SYNC, services.handle_sync_service)
@@ -60,5 +60,14 @@ class AlexaServices:
                 self.hass.bus.async_fire("alexa_shopping_list_changed")
         except Exception as e:
             self.logger.error(f"Alexa Shopping List Sync Error: {e}", exc_info=True)
+        finally:
+            if self.alexa.is_authenticated:
+                self.hass.components.persistent_notification.async_dismiss("alexa_shopping_list_auth")
+            else:
+                self.hass.components.persistent_notification.async_create(
+                    "Alexa Shopping List requires re-authentication. Please open the addon Web UI and log in again.",
+                    title="Alexa Shopping List Auth Expired",
+                    notification_id="alexa_shopping_list_auth"
+                )
 
 

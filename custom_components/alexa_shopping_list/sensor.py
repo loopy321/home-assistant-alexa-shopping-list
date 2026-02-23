@@ -47,4 +47,13 @@ class AlexaShoppingListSyncSensor(SensorEntity):
 
         except Exception as e:
             _LOGGER.error(f"Alexa Shopping List Sync Error: {e}", exc_info=True)
+        finally:
+            if self.alexa.is_authenticated:
+                self.hass.components.persistent_notification.async_dismiss("alexa_shopping_list_auth")
+            else:
+                self.hass.components.persistent_notification.async_create(
+                    "Alexa Shopping List requires re-authentication. Please open the addon Web UI and log in again.",
+                    title="Alexa Shopping List Auth Expired",
+                    notification_id="alexa_shopping_list_auth"
+                )
 

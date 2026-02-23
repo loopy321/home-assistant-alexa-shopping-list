@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 <!-- RELEASE START -->
+## [2602.054.02] - 2026-02-23
+
+### Features
+- **Authentication Status Binary Sensor** — Added a new `binary_sensor` to Home Assistant (`binary_sensor.alexa_shopping_list_authenticated`) that shows if the addon is connected or disconnected.
+- **Persistent Notifications** — If the shopping list sync fails due to an expired session, a persistent notification will now pop up in Home Assistant alerting you to re-authenticate. The notification automatically clears once you log back in.
 ## [2602.054.01] - 2026-02-23
 
 ### Bug Fixes
