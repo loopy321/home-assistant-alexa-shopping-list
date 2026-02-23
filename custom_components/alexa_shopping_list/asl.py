@@ -121,6 +121,8 @@ class AlexaShoppingListSync:
             response = await self._send_command("get_list")
             if self._command_successful(response):
                 self._update_cached_list(self._command_result(response))
+            else:
+                raise Exception(self._command_error(response))
         return self._cached_list
     
 

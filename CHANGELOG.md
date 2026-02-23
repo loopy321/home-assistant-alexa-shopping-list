@@ -4,10 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 <!-- RELEASE START -->
-## [2602.054.00] - 2026-02-23
+## [2602.054.01] - 2026-02-23
+
+### Bug Fixes
+- **Graceful handling of expired Amazon sessions** — Detects login redirects (`ap/signin`, `ap/mfa`, etc.) immediately instead of waiting 30s for a `TimeoutException`
+- **Server returns clean "Not authenticated" error** — `NotAuthenticatedError` caught in all shopping list commands, auth cache invalidated automatically
+- **HA component logs auth errors clearly** — `_get_list` raises exception on server error, logged as `"Sync error: Not authenticated"` in HA logs
 
 ### Improvements
-- **Added diagnostic logging on Selenium timeout** — Captures screenshot, current URL, and page source snippet when `TimeoutException` occurs, aiding in debugging headless browser issues
+- **Added diagnostic logging on Selenium timeout** — Captures screenshot, current URL, and page source snippet when `TimeoutException` occurs
 <!-- RELEASE END -->
 
 ## [2602.050.01] - 2026-02-19

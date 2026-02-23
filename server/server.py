@@ -6,7 +6,7 @@ import json
 import signal
 import os
 import logging
-from alexa import AlexaShoppingList
+from alexa import AlexaShoppingList, NotAuthenticatedError
 import time
 
 logger = logging.getLogger(__name__)
@@ -158,6 +158,10 @@ async def _cmd_get_shopping_list():
             result = None, "Not authenticated"
         else:
             result = instance.get_alexa_list(), None
+    except NotAuthenticatedError as e:
+        logger.warning(f"Session expired during get_list: {e}")
+        _set_config_value("auth_checked_time", 0)
+        result = None, "Not authenticated"
     except Exception as e:
         logger.error(f"Error getting shopping list: {e}", exc_info=True)
         result = None, f"Server error: {e}"
@@ -173,6 +177,10 @@ async def _cmd_get_add_shopping_list_item(args):
             result = None, "Not authenticated"
         else:
             result = instance.add_alexa_list_item(args['item']), None
+    except NotAuthenticatedError as e:
+        logger.warning(f"Session expired during add_item: {e}")
+        _set_config_value("auth_checked_time", 0)
+        result = None, "Not authenticated"
     except Exception as e:
         logger.error(f"Error adding item: {e}", exc_info=True)
         result = None, f"Server error: {e}"
@@ -188,6 +196,10 @@ async def _cmd_get_update_shopping_list_item(args):
             result = None, "Not authenticated"
         else:
             result = instance.update_alexa_list_item(args['old'], args['new']), None
+    except NotAuthenticatedError as e:
+        logger.warning(f"Session expired during update_item: {e}")
+        _set_config_value("auth_checked_time", 0)
+        result = None, "Not authenticated"
     except Exception as e:
         logger.error(f"Error updating item: {e}", exc_info=True)
         result = None, f"Server error: {e}"
@@ -203,6 +215,10 @@ async def _cmd_get_remove_shopping_list_item(args):
             result = None, "Not authenticated"
         else:
             result = instance.remove_alexa_list_item(args['item']), None
+    except NotAuthenticatedError as e:
+        logger.warning(f"Session expired during remove_item: {e}")
+        _set_config_value("auth_checked_time", 0)
+        result = None, "Not authenticated"
     except Exception as e:
         logger.error(f"Error removing item: {e}", exc_info=True)
         result = None, f"Server error: {e}"

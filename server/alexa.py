@@ -17,6 +17,10 @@ logger = logging.getLogger(__name__)
 
 WAIT_TIMEOUT=30
 
+class NotAuthenticatedError(Exception):
+    """Raised when the Amazon session has expired and login is required."""
+    pass
+
 class AlexaShoppingList:
 
     def __init__(self, amazon_url: str = "amazon.co.uk", cookies_path: str = ""):
@@ -164,12 +168,28 @@ class AlexaShoppingList:
     # Alexa lists
 
 
+    def _check_auth_redirect(self):
+        """Check if Amazon redirected to a login page. Raises NotAuthenticatedError if so."""
+        current_url = self.driver.current_url
+        auth_indicators = ['ap/signin', 'ap/mfa', 'ap/cvf', 'ap/challenge']
+        for indicator in auth_indicators:
+            if indicator in current_url:
+                logger.warning(f"Session expired: redirected to {current_url}")
+                self.is_authenticated = False
+                raise NotAuthenticatedError(f"Amazon session expired (redirected to login: {indicator})")
+
+
     def _ensure_driver_is_on_alexa_list(self, refresh: bool = False):
         list_url = "https://www."+self.amazon_url+"/alexaquantum/sp/alexaShoppingList"
         if "/alexaquantum/sp/alexaShoppingList" not in self.driver.current_url:
-            self._selenium_get(list_url, (By.CLASS_NAME, 'virtual-list'))
+            self.driver.get(list_url)
+            self._selenium_wait_page_ready()
+            self._check_auth_redirect()
+            self._selenium_wait_element((By.CLASS_NAME, 'virtual-list'))
         elif refresh == True:
             self.driver.refresh()
+            self._selenium_wait_page_ready()
+            self._check_auth_redirect()
             self._selenium_wait_element((By.CLASS_NAME, 'virtual-list'))
 
 
