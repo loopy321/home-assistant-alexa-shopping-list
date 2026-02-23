@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## [2602.054.22] - 2026-02-23
 
 ### Bug Fixes
+- **Persistent Notification AttributeError** — Replaced `hass.components.persistent_notification` with direct imports to fix an `AttributeError` on session expiration.
 - **Binary Sensor State Updates** — The `binary_sensor` now actively pulls the cached authentication state directly from the server during each polling cycle, ensuring it accurately reflects connection status without triggering unnecessary browser sessions.
 
 ## [2602.054.04] - 2026-02-23

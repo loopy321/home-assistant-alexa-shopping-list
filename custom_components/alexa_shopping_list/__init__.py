@@ -3,6 +3,7 @@
 import logging
 
 from .asl import AlexaShoppingListSync
+from homeassistant.components import persistent_notification
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -62,9 +63,10 @@ class AlexaServices:
             self.logger.error(f"Alexa Shopping List Sync Error: {e}", exc_info=True)
         finally:
             if self.alexa.is_authenticated:
-                self.hass.components.persistent_notification.async_dismiss("alexa_shopping_list_auth")
+                persistent_notification.async_dismiss(self.hass, "alexa_shopping_list_auth")
             else:
-                self.hass.components.persistent_notification.async_create(
+                persistent_notification.async_create(
+                    self.hass,
                     "Alexa Shopping List requires re-authentication. Please open the addon Web UI and log in again.",
                     title="Alexa Shopping List Auth Expired",
                     notification_id="alexa_shopping_list_auth"
