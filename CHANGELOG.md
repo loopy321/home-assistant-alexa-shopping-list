@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 <!-- RELEASE START -->
+## [2602.054.24] - 2026-02-24
+
+### Bug Fixes
+- **Sensor State Updates** — Fixed an issue where the `sensor.alexa_shopping_list_sync` state would show up as `"unknown"` until a change in the list triggered a sync. The sensor now correctly reflects the last successful sync timestamp at startup.
+
 ## [2602.054.23] - 2026-02-23
 ## [2602.054.22] - 2026-02-23
 
