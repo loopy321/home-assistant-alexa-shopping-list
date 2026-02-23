@@ -167,7 +167,12 @@ class Authenticator:
             subprocess.run(["unzip", "-q", file_name, "-d", temp_dir], check=True)
         else:
             with zipfile.ZipFile(file_name, 'r') as zip_ref:
-                zip_ref.extractall(temp_dir)
+                for info in zip_ref.infolist():
+                    extracted_path = zip_ref.extract(info, temp_dir)
+                    if info.create_system == 3:
+                        unix_attributes = info.external_attr >> 16
+                        if unix_attributes:
+                            os.chmod(extracted_path, unix_attributes)
         
         extracted_dir = next(os.path.join(temp_dir, d) for d in os.listdir(temp_dir) if os.path.isdir(os.path.join(temp_dir, d)))
         shutil.move(extracted_dir, os.path.join(base_path, extract_as))
@@ -195,7 +200,6 @@ class Authenticator:
 
         if platform.system() == "Darwin":
             subprocess.run(["xattr", "-r", "-d", "com.apple.quarantine", chrome_path], check=False)
-            subprocess.run(["chmod", "+x", self._get_chromium_sub_path("chrome_binary_path")], check=True)
 
         print(f"Downloading Chrome Driver...")
         response = requests.get(driver_url, stream=True)
