@@ -7,10 +7,13 @@ from selenium.webdriver.common.actions.wheel_input import ScrollOrigin
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 import time
 import json
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 WAIT_TIMEOUT=30
 
@@ -84,7 +87,20 @@ class AlexaShoppingList:
 
 
     def _selenium_wait_element(self, element: tuple):
-        WebDriverWait(self.driver, WAIT_TIMEOUT).until(EC.presence_of_element_located(element))
+        try:
+            WebDriverWait(self.driver, WAIT_TIMEOUT).until(EC.presence_of_element_located(element))
+        except TimeoutException:
+            current_url = self.driver.current_url
+            logger.error(f"Timeout waiting for element {element}. Current URL: {current_url}")
+            try:
+                screenshot_path = os.path.join(self.cookies_path or self._get_file_location(), "debug_timeout.png")
+                self.driver.save_screenshot(screenshot_path)
+                logger.error(f"Screenshot saved to {screenshot_path}")
+            except Exception as screenshot_err:
+                logger.error(f"Failed to save screenshot: {screenshot_err}")
+            page_source = self.driver.page_source[:3000] if self.driver.page_source else "empty"
+            logger.error(f"Page source snippet: {page_source}")
+            raise
 
 
     def _selenium_wait_page_ready(self):
