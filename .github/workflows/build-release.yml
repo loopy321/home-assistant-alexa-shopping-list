@@ -88,6 +88,11 @@ jobs:
       - name: Extract version from tag
         run: echo "IMAGE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
+      - name: Check out main repository
+        uses: actions/checkout@v3
+        with:
+          path: main-repo
+
       - name: Check out the external repository
         uses: actions/checkout@v3
         with:
@@ -95,10 +100,11 @@ jobs:
           path: external-repo
           token: ${{ secrets.HASS_REPO_TOKEN }}
 
-      - name: Update version in YAML file
+      - name: Update version and copy CHANGELOG
         run: |
           cd external-repo
           sed -i "s/^version:.*/version: '${{ env.IMAGE_VERSION }}'/" ${{ env.FILE_PATH }}
+          cp ../main-repo/CHANGELOG.md alexa_shopping_list/CHANGELOG.md
           cd ../
 
       - name: Commit and push changes
@@ -108,6 +114,6 @@ jobs:
           cd external-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add ${{ env.FILE_PATH }}
-          git commit -m "Update version to ${{ env.IMAGE_VERSION }}" || true
+          git add ${{ env.FILE_PATH }} alexa_shopping_list/CHANGELOG.md
+          git commit -m "Update version to ${{ env.IMAGE_VERSION }} and sync CHANGELOG" || true
           git push origin main || true
