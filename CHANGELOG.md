@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 <!-- RELEASE START -->
+## [2602.055.00] - 2026-02-24
+
+### Bug Fixes
+- **Chromium Extraction** — Preserved zip file permissions natively when extracting Chromium, ensuring `chrome` and helper binaries are correctly marked as executable on Linux and macOS.
+
 ## [2602.054.24] - 2026-02-24
 
 ### Bug Fixes
