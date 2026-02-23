@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 <!-- RELEASE START -->
+## [2602.054.03] - 2026-02-23
+
+### Features
+- **Client Status Command** — Added a `status` command to `client.py` to easily check if the backend server is currently authenticated with Amazon without needing to trigger a sync.
 ## [2602.054.02] - 2026-02-23
 
 ### Features

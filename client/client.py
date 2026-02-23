@@ -144,6 +144,7 @@ class WebSocketClient:
 
         Commands:
         authenticate           Authenticate with your Alexa account
+        status                 Check if the server is currently authenticated
         help                   Show this help message
         reset                  Reset the server to initial setup
         shutdown               Send shutdown signal to server
@@ -233,6 +234,15 @@ class WebSocketClient:
             return
         print("ERROR: "+self._command_error(response))
 
+
+    async def _cmd_status(self):
+        print("Checking server authentication status...")
+        is_auth = await self._server_authenticated()
+        if is_auth:
+            print("Server is AUTHENTICATED \u2705")
+        else:
+            print("Server is NOT AUTHENTICATED \u274c (Run 'authenticate' to login)")
+
     # ============================================================
     # Console
 
@@ -264,6 +274,9 @@ class WebSocketClient:
         
         if command == "authenticate":
             await self._setup_server_authentication()
+            
+        if command == "status":
+            await self._cmd_status()
         
         if command == "help":
             await self._get_help()
