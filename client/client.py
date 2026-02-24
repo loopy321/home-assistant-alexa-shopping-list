@@ -298,6 +298,9 @@ class WebSocketClient:
         print("\nType 'help' for commands.\n")
         while True:
             cmd_input = input("> ").strip().lower()
+            if not cmd_input:
+                continue
+                
             parts = shlex.split(cmd_input)
 
             command = parts[0]

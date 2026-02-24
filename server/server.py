@@ -6,8 +6,24 @@ import json
 import signal
 import os
 import logging
-from alexa import AlexaShoppingList, NotAuthenticatedError
 import time
+import datetime
+
+class _CustomFormatter(logging.Formatter):
+    def format(self, record):
+        dt = datetime.datetime.fromtimestamp(record.created)
+        time_str = dt.strftime("%Y/%m/%d %H:%M:%S.%f")
+        level_str = record.levelname.lower()
+        return f"{time_str} [{level_str}] {record.getMessage()}"
+
+_handler = logging.StreamHandler()
+_handler.setFormatter(_CustomFormatter())
+logging.root.setLevel(logging.INFO)
+for _h in logging.root.handlers[:]:
+    logging.root.removeHandler(_h)
+logging.root.addHandler(_handler)
+
+from alexa import AlexaShoppingList, NotAuthenticatedError
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +71,7 @@ def _get_config_value(key, default=None):
 
 
 def _set_config_value(key, new_value=None):
-    print("\nSet config value `"+key+"` = "+str(new_value))
+    logger.info("Set config value `"+key+"` = "+str(new_value))
     global config
     if new_value != None:
         config[key] = new_value
@@ -135,11 +151,11 @@ async def _cmd_is_authenticated(arguments=None):
     instance = _start_alexa()
 
     if instance.requires_login() == True:
-        print("\nAuthenticated: No")
+        logger.info("Authenticated: No")
         _set_config_value("auth_checked_time", 0)
         result = False, None
     else:
-        print("\nAuthenticated: Yes")
+        logger.info("Authenticated: Yes")
         _set_config_value("auth_checked_time", _time_now())
         result = True, None
     
@@ -148,7 +164,7 @@ async def _cmd_is_authenticated(arguments=None):
 
 
 async def _cmd_login(args):
-    print("\nAttempting login...")
+    logger.info("Attempting login...")
 
     with open(os.path.join(_config_path(), 'cookies.json'), 'w') as file:
         json.dump(args['session'], file)
@@ -315,7 +331,7 @@ async def _shutdown_server():
 
 
 def _signal_handler(sig, frame):
-    print("\nShutting down server...")
+    logger.info("Shutting down server...")
     asyncio.run(_shutdown_server())
 
 
@@ -327,7 +343,8 @@ async def main():
     listen_port = int(_get_config_value('listen_port', 4000))
     server = await websockets.serve(_process_command, listen_addr, listen_port)
 
-    print("Alexa Shopping List server started on port "+str(listen_port))
+    logger.info("======================================================================")
+    logger.info("Alexa Shopping List server started on port "+str(listen_port))
 
     signal.signal(signal.SIGINT, _signal_handler)
     await server.wait_closed()

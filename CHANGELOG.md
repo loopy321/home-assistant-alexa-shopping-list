@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 <!-- RELEASE START -->
+## [2602.056.00] - 2026-02-25
+
+### Features
+- **Server Logging Improvements** — Added a custom logging format to `server.py` and `alexa.py` to include timestamps in all log lines.
+- **Server Startup Banner** — Added a clearer startup log line to distinguish server restarts in the logs.
+
+### Bug Fixes
+- **Client Empty Command Crash** — Fixed an `IndexError` in `client.py` that occurred when pressing Enter without typing any command in the console.
+
 ## [2602.055.00] - 2026-02-24
 
 ### Bug Fixes
