@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 <!-- RELEASE START -->
-## [2602.056.01] - 2026-02-25
+## [2602.056.02] - 2026-02-25
 
 ### Features
 - **Manual Sync Logging** — The custom component now logs an info-level message in Home Assistant when a manual sync action is triggered.
