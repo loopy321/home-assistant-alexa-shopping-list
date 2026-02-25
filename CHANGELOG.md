@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## [2602.056.00] - 2026-02-25
 
 ### Features
+- **Manual Sync Logging** — The custom component now logs an info-level message in Home Assistant when a manual sync action is triggered.
 - **Server Logging Improvements** — Added a custom logging format to `server.py` and `alexa.py` to include timestamps in all log lines.
 - **Server Startup Banner** — Added a clearer startup log line to distinguish server restarts in the logs.
 

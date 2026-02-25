@@ -80,7 +80,7 @@ jobs:
 
       - name: Extract changelog
         run: |
-          BODY=$(sed -n '/<!-- RELEASE START -->/,/<!-- RELEASE END -->/p' CHANGELOG.md | sed '1d;$d')
+          BODY=$(awk '/<!-- RELEASE START -->/{flag=1; next} /<!-- RELEASE END -->/{if(flag) exit} flag' CHANGELOG.md)
           echo "RELEASE_BODY<<EOF" >> $GITHUB_ENV
           echo "$BODY" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV

@@ -52,7 +52,7 @@ class AlexaServices:
         self.hass = hass
 
     async def handle_sync_service(self, call):
-        self.logger.debug("Alexa Sync Service")
+        self.logger.info("Alexa Shopping List manual sync triggered via Home Assistant action")
 
         try:
             updated = await self.alexa.sync(self.logger, True)
