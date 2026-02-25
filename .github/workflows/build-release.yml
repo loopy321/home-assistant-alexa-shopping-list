@@ -52,6 +52,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           context: ./server/
           push: true
+          provenance: false
           tags: |
             raidolo/ha-alexa-shopping-list-sync:${{ env.IMAGE_VERSION }}
             raidolo/ha-alexa-shopping-list-sync:latest
