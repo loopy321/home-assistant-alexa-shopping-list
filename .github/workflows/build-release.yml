@@ -26,7 +26,7 @@ jobs:
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             echo "IMAGE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
           else
-            LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v0.0.0")
+            LATEST_TAG=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo "v0.0.0")
             echo "IMAGE_VERSION=${LATEST_TAG#v}" >> $GITHUB_ENV
           fi
       - name: Show version number
@@ -70,7 +70,7 @@ jobs:
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             echo "IMAGE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
           else
-            LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v0.0.0")
+            LATEST_TAG=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo "v0.0.0")
             echo "IMAGE_VERSION=${LATEST_TAG#v}" >> $GITHUB_ENV
           fi
 
@@ -113,7 +113,7 @@ jobs:
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             echo "IMAGE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
           else
-            LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v0.0.0")
+            LATEST_TAG=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo "v0.0.0")
             echo "IMAGE_VERSION=${LATEST_TAG#v}" >> $GITHUB_ENV
           fi
           cd ..
