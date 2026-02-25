@@ -17,7 +17,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Extract version from tag
-        run: echo "IMAGE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "IMAGE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          else
+            LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v0.0.0")
+            echo "IMAGE_VERSION=${LATEST_TAG#v}" >> $GITHUB_ENV
+          fi
       - name: Show version number
         run: echo "Building release for version - $IMAGE_VERSION"
       
@@ -53,7 +59,13 @@ jobs:
     needs: docker
     steps:
       - name: Extract version from tag
-        run: echo "IMAGE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "IMAGE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          else
+            LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v0.0.0")
+            echo "IMAGE_VERSION=${LATEST_TAG#v}" >> $GITHUB_ENV
+          fi
       
       - name: Check out code
         uses: actions/checkout@v3
@@ -86,7 +98,13 @@ jobs:
       FILE_PATH: alexa_shopping_list/config.yaml
     steps:
       - name: Extract version from tag
-        run: echo "IMAGE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "IMAGE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          else
+            LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v0.0.0")
+            echo "IMAGE_VERSION=${LATEST_TAG#v}" >> $GITHUB_ENV
+          fi
 
       - name: Check out main repository
         uses: actions/checkout@v3
