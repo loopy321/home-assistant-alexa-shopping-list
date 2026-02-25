@@ -297,11 +297,19 @@ class WebSocketClient:
 
         print("\nType 'help' for commands.\n")
         while True:
-            cmd_input = input("> ").strip().lower()
+            try:
+                cmd_input = input("> ").strip().lower()
+            except (KeyboardInterrupt, EOFError):
+                break
+                
             if not cmd_input:
                 continue
                 
-            parts = shlex.split(cmd_input)
+            try:
+                parts = shlex.split(cmd_input)
+            except ValueError as e:
+                print(f"Error parsing command: {e}")
+                continue
 
             command = parts[0]
             arguments = parts[1:]
@@ -325,4 +333,7 @@ class WebSocketClient:
 
 if __name__ == "__main__":
     client = WebSocketClient()
-    asyncio.run(client.run_console())
+    try:
+        asyncio.run(client.run_console())
+    except KeyboardInterrupt:
+        pass
