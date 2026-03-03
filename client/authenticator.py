@@ -70,6 +70,7 @@ class Authenticator:
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument(f"--user-agent={user_agent}")
+        chrome_options.add_argument("--log-level=3")
         chrome_options.binary_location = self._get_chromium_sub_path("chrome_binary_path")
 
         service = webdriver.ChromeService(executable_path=self._get_chromium_sub_path("chromedriver_binary_path"))

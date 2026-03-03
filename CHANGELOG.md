@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Bug Fixes
 - **Client Empty Command Crash** — Fixed an `IndexError` in `client.py` that occurred when pressing Enter without typing any command in the console.
+- **Selenium Logging on Windows** — Fixed excessive console logging from the Selenium WebDriver on Windows by setting the log level to 3.
 
 ## [2602.055.00] - 2026-02-24
 
