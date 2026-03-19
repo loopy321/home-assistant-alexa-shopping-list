@@ -1,4 +1,4 @@
-FROM alpine:3.20
+FROM alpine:latest
 
 RUN mkdir /config
 RUN mkdir /server
