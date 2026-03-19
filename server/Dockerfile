@@ -18,7 +18,6 @@ RUN apk add chromium
 RUN apk add chromium-chromedriver
 RUN apk add python3
 RUN apk add py3-pip
-RUN apk add tini
 
 RUN rm -rf /var/lib/apt/lists/*
 
@@ -26,4 +25,4 @@ RUN pip3 install --break-system-packages -r /server/requirements.txt
 RUN rm /server/requirements.txt
 
 EXPOSE 4000 4000
-ENTRYPOINT ["/sbin/tini", "--", "python3","/server/server.py"]
+ENTRYPOINT ["python3","/server/server.py"]
