@@ -51,7 +51,7 @@ class AlexaShoppingList:
 
         chrome_options = Options()
         if(self._is_debug_mode() == False):
-            chrome_options.add_argument("--headless=new")
+            chrome_options.add_argument("--headless=old")
         chrome_options.add_argument("window-size=1366,768")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
