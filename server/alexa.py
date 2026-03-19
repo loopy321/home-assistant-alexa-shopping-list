@@ -51,18 +51,21 @@ class AlexaShoppingList:
 
         chrome_options = Options()
         if(self._is_debug_mode() == False):
-            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--headless=new")
         chrome_options.add_argument("window-size=1366,768")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-software-rasterizer")
+        chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument(f"--user-agent={user_agent}")
 
         driver_path = os.environ.get("CHROME_DRIVER", "")
         if driver_path != "":
+            log_path = os.path.join(self.cookies_path or self._get_file_location(), "chromedriver.log")
             service = webdriver.ChromeService(
                 executable_path=driver_path,
-                service_args=['--verbose', '--log-path=/tmp/chromedriver.log']
+                service_args=['--verbose', f'--log-path={log_path}']
             )
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
         else:
