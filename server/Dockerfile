@@ -10,8 +10,6 @@ COPY requirements.txt /server/requirements.txt
 ENV ASL_CONFIG_PATH="/config/"
 ENV CHROME_DRIVER="/usr/bin/chromedriver"
 
-RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" > /etc/apk/repositories
-RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
 RUN apk update
 
 RUN apk add chromium
