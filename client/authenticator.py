@@ -82,7 +82,7 @@ class Authenticator:
 
     def _clear_driver(self):
         if hasattr(self, "driver"):
-            self.driver.close()
+            self.driver.quit()
 
 
     def _selenium_wait_element(self, element: tuple):

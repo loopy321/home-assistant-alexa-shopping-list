@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 
+## [2603.079.01] - 2026-03-20
+
+### Bug Fixes
+- **Zombie processes** — Fixed an issue where defunct Chromium processes would accumulate over time when running the server. Added `tini` as an init manager for Docker and ensured the WebDriver cleans up via `.quit()` instead of `.close()`.
+
 ## [2602.056.03] - 2026-02-25
 
 ### Features
