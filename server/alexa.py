@@ -51,7 +51,7 @@ class AlexaShoppingList:
 
         chrome_options = Options()
         if(self._is_debug_mode() == False):
-            chrome_options.add_argument("--headless=old")
+            chrome_options.add_argument("--headless=new")
         chrome_options.add_argument("window-size=1366,768")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
@@ -143,7 +143,7 @@ class AlexaShoppingList:
             for cookie in cookies:
                 self.driver.add_cookie(cookie)
 
-            self.driver.refresh()
+            self.driver.get(self.driver.current_url)
             self._selenium_wait_element((By.ID, 'nav-link-accountList'))
 
 
@@ -200,7 +200,7 @@ class AlexaShoppingList:
             self._check_auth_redirect()
             self._selenium_wait_element((By.CLASS_NAME, 'virtual-list'))
         elif refresh == True:
-            self.driver.refresh()
+            self.driver.get(self.driver.current_url)
             self._selenium_wait_page_ready()
             self._check_auth_redirect()
             self._selenium_wait_element((By.CLASS_NAME, 'virtual-list'))
