@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 
+## [2603.079.09] - 2026-03-20
+
+### Improvements
+- **ChromeDriver Debugging** — Disabled verbose debugging in ChromeDriver as a follow-up to the zombie processes fix. This will be introduced as an optional configuration flag in the Add-on in a future update.
+
 ## [2603.079.02] - 2026-03-20
 
 ### Features

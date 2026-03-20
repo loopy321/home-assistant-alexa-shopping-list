@@ -61,10 +61,8 @@ class AlexaShoppingList:
 
         driver_path = os.environ.get("CHROME_DRIVER", "")
         if driver_path != "":
-            log_path = os.path.join(self.cookies_path or self._get_file_location(), "chromedriver.log")
             service = webdriver.ChromeService(
-                executable_path=driver_path,
-                service_args=['--verbose', f'--log-path={log_path}']
+                executable_path=driver_path
             )
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
         else:
