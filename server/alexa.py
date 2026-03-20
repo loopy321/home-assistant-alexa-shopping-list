@@ -51,12 +51,11 @@ class AlexaShoppingList:
 
         chrome_options = Options()
         if(self._is_debug_mode() == False):
-            chrome_options.add_argument("--headless=new")
+            chrome_options.add_argument("--headless")
         chrome_options.add_argument("window-size=1366,768")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument(f"--user-agent={user_agent}")
 
         driver_path = os.environ.get("CHROME_DRIVER", "")
