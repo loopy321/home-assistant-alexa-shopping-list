@@ -39,14 +39,53 @@ class AlexaShoppingList:
     def _get_file_location(self):
         return os.path.dirname(os.path.realpath(__file__))
 
+    def _is_template_literal(self, value: str) -> bool:
+        return value.startswith("{{") and value.endswith("}}")
+
+    def _load_addon_options(self):
+        if hasattr(self, "_addon_options"):
+            return
+
+        self._addon_options = {}
+        options_path = os.environ.get("ALEXA_SHOPPING_LIST_ADDON_OPTIONS_PATH", "/data/options.json")
+
+        try:
+            with open(options_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                if isinstance(loaded, dict):
+                    self._addon_options = loaded
+        except Exception:
+            # Running outside Home Assistant add-on context is expected.
+            pass
+
+    def _get_addon_option(self, key: str, default=None):
+        self._load_addon_options()
+        return self._addon_options.get(key, default)
+
     def _is_debug_mode(self):
-        return os.environ.get("ALEXA_SHOPPING_LIST_DEBUG", "0") == "1"
+        configured = os.environ.get("ALEXA_SHOPPING_LIST_DEBUG", "").strip()
+
+        if configured and not self._is_template_literal(configured):
+            return configured.lower() in ("1", "true", "yes", "on")
+
+        option_debug = self._get_addon_option("ALEXA_SHOPPING_LIST_DEBUG", False)
+        if isinstance(option_debug, bool):
+            return option_debug
+        if isinstance(option_debug, str):
+            return option_debug.strip().lower() in ("1", "true", "yes", "on")
+
+        return bool(option_debug)
 
 
     def _debug_log_path(self):
         configured = os.environ.get("ALEXA_SHOPPING_LIST_DEBUG_LOG_PATH", "").strip()
-        if configured:
+        if configured and not self._is_template_literal(configured):
             return configured
+
+        option_path = self._get_addon_option("ALEXA_SHOPPING_LIST_DEBUG_LOG_PATH", "")
+        if isinstance(option_path, str) and option_path.strip() != "":
+            return option_path.strip()
+
         base = self.cookies_path or self._get_file_location()
         return os.path.join(base, "chromium_debug.log")
 
