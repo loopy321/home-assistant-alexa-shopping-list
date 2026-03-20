@@ -42,6 +42,14 @@ class AlexaShoppingList:
     def _is_debug_mode(self):
         return os.environ.get("ALEXA_SHOPPING_LIST_DEBUG", "0") == "1"
 
+
+    def _debug_log_path(self):
+        configured = os.environ.get("ALEXA_SHOPPING_LIST_DEBUG_LOG_PATH", "").strip()
+        if configured:
+            return configured
+        base = self.cookies_path or self._get_file_location()
+        return os.path.join(base, "chromium_debug.log")
+
     # ============================================================
     # Selenium
 
@@ -59,10 +67,24 @@ class AlexaShoppingList:
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument(f"--user-agent={user_agent}")
 
+        if self._is_debug_mode():
+            debug_log_path = self._debug_log_path()
+            chrome_options.add_argument("--enable-logging")
+            chrome_options.add_argument("--v=1")
+            chrome_options.add_argument("--verbose")
+            chrome_options.add_argument(f"--log-file={debug_log_path}")
+            logger.info(f"Debug mode enabled, Chromium log path: {debug_log_path}")
+
         driver_path = os.environ.get("CHROME_DRIVER", "")
         if driver_path != "":
+            service_kwargs = {
+                "executable_path": driver_path
+            }
+            if self._is_debug_mode():
+                debug_log_path = self._debug_log_path()
+                service_kwargs["service_args"] = ["--verbose", f"--log-path={debug_log_path}"]
             service = webdriver.ChromeService(
-                executable_path=driver_path
+                **service_kwargs
             )
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
         else:
