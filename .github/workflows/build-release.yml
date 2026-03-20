@@ -3,6 +3,8 @@ name: Build Release
 on:
   workflow_dispatch:
   push:
+    branches:
+      - dev
     tags:
       - 'v*'
 
@@ -46,6 +48,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Prepare tags
+        run: |
+          if [ "${GITHUB_REF}" == "refs/heads/dev" ]; then
+            echo "DOCKER_TAGS=raidolo/ha-alexa-shopping-list-sync:dev" >> $GITHUB_ENV
+          else
+            echo "DOCKER_TAGS=raidolo/ha-alexa-shopping-list-sync:${{ env.IMAGE_VERSION }},raidolo/ha-alexa-shopping-list-sync:latest" >> $GITHUB_ENV
+          fi
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -53,15 +63,14 @@ jobs:
           context: ./server/
           push: true
           provenance: false
-          tags: |
-            raidolo/ha-alexa-shopping-list-sync:${{ env.IMAGE_VERSION }}
-            raidolo/ha-alexa-shopping-list-sync:latest
+          tags: ${{ env.DOCKER_TAGS }}
   
 
   release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     needs: docker
+    if: github.ref != 'refs/heads/dev'
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -115,6 +124,7 @@ jobs:
     name: Publish update to HASS Add-on repository
     runs-on: ubuntu-latest
     needs: release
+    if: github.ref != 'refs/heads/dev'
     env:
       REPO_NAME: raidolo/home-assistant-alexa-shopping-list-hass
       FILE_PATH: alexa_shopping_list/config.yaml
