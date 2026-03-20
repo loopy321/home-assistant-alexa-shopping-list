@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 
+## [2603.079.10] - 2026-03-21
+
+### Features
+- **Configurable Chromium debug logging** — Added support for enabling Selenium/Chromium verbose logs and configuring the output path.
+
+### Bug Fixes
+- **Add-on env placeholder fallback** — When add-on environment placeholders are not rendered (e.g. literal `{{ ... }}` values), the server now falls back to reading options from `/data/options.json` to correctly resolve debug settings.
+
+### Maintenance
+- **Local workspace metadata ignored** — Added `.kilocode/` and `.agent/` to `.gitignore` to prevent accidental commits of local tooling metadata.
+
 ## [2603.079.09] - 2026-03-20
 
 ### Improvements
