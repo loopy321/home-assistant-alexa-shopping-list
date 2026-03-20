@@ -97,8 +97,9 @@ class AlexaShoppingList:
         user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
 
         chrome_options = Options()
-        if(self._is_debug_mode() == False):
-            chrome_options.add_argument("--headless")
+        # Keep headless mode always enabled inside containerized environments.
+        # Debug mode only controls verbosity/log output, not headed execution.
+        chrome_options.add_argument("--headless")
         chrome_options.add_argument("window-size=1366,768")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
