@@ -39,8 +39,55 @@ class AlexaShoppingList:
     def _get_file_location(self):
         return os.path.dirname(os.path.realpath(__file__))
 
+    def _is_template_literal(self, value: str) -> bool:
+        return value.startswith("{{") and value.endswith("}}")
+
+    def _load_addon_options(self):
+        if hasattr(self, "_addon_options"):
+            return
+
+        self._addon_options = {}
+        options_path = os.environ.get("ALEXA_SHOPPING_LIST_ADDON_OPTIONS_PATH", "/data/options.json")
+
+        try:
+            with open(options_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                if isinstance(loaded, dict):
+                    self._addon_options = loaded
+        except Exception:
+            # Running outside Home Assistant add-on context is expected.
+            pass
+
+    def _get_addon_option(self, key: str, default=None):
+        self._load_addon_options()
+        return self._addon_options.get(key, default)
+
     def _is_debug_mode(self):
-        return os.environ.get("ALEXA_SHOPPING_LIST_DEBUG", "0") == "1"
+        configured = os.environ.get("ALEXA_SHOPPING_LIST_DEBUG", "").strip()
+
+        if configured and not self._is_template_literal(configured):
+            return configured.lower() in ("1", "true", "yes", "on")
+
+        option_debug = self._get_addon_option("ALEXA_SHOPPING_LIST_DEBUG", False)
+        if isinstance(option_debug, bool):
+            return option_debug
+        if isinstance(option_debug, str):
+            return option_debug.strip().lower() in ("1", "true", "yes", "on")
+
+        return bool(option_debug)
+
+
+    def _debug_log_path(self):
+        configured = os.environ.get("ALEXA_SHOPPING_LIST_DEBUG_LOG_PATH", "").strip()
+        if configured and not self._is_template_literal(configured):
+            return configured
+
+        option_path = self._get_addon_option("ALEXA_SHOPPING_LIST_DEBUG_LOG_PATH", "")
+        if isinstance(option_path, str) and option_path.strip() != "":
+            return option_path.strip()
+
+        base = self.cookies_path or self._get_file_location()
+        return os.path.join(base, "chromium_debug.log")
 
     # ============================================================
     # Selenium
@@ -50,8 +97,9 @@ class AlexaShoppingList:
         user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
 
         chrome_options = Options()
-        if(self._is_debug_mode() == False):
-            chrome_options.add_argument("--headless")
+        # Keep headless mode always enabled inside containerized environments.
+        # Debug mode only controls verbosity/log output, not headed execution.
+        chrome_options.add_argument("--headless")
         chrome_options.add_argument("window-size=1366,768")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
@@ -59,10 +107,24 @@ class AlexaShoppingList:
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument(f"--user-agent={user_agent}")
 
+        if self._is_debug_mode():
+            debug_log_path = self._debug_log_path()
+            chrome_options.add_argument("--enable-logging")
+            chrome_options.add_argument("--v=1")
+            chrome_options.add_argument("--verbose")
+            chrome_options.add_argument(f"--log-file={debug_log_path}")
+            logger.info(f"Debug mode enabled, Chromium log path: {debug_log_path}")
+
         driver_path = os.environ.get("CHROME_DRIVER", "")
         if driver_path != "":
+            service_kwargs = {
+                "executable_path": driver_path
+            }
+            if self._is_debug_mode():
+                debug_log_path = self._debug_log_path()
+                service_kwargs["service_args"] = ["--verbose", f"--log-path={debug_log_path}"]
             service = webdriver.ChromeService(
-                executable_path=driver_path
+                **service_kwargs
             )
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
         else:
