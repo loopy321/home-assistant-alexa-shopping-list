@@ -290,6 +290,16 @@ class AlexaShoppingList:
         self._wait_for_alexa_list_ready()
 
 
+    def _wait_for_alexa_list_items(self, timeout: int = 5):
+        try:
+            WebDriverWait(self.driver, timeout).until(
+                lambda driver: len(driver.find_elements(By.CLASS_NAME, 'item-title')) > 0
+            )
+            return True
+        except TimeoutException:
+            return False
+
+
     def _get_alexa_list_container(self):
         self._check_auth_redirect()
 
@@ -366,10 +376,16 @@ class AlexaShoppingList:
 
     def get_alexa_list(self, refresh: bool = True):
         self._prepare_alexa_list_page(refresh)
+        self._wait_for_alexa_list_items()
         list_container = self._get_alexa_list_container()
         found = self._extract_alexa_list_items(list_container)
 
         if len(found) == 0:
+            # The page shell can render before list items are hydrated.
+            # Retry the extraction once more before accepting a true empty list.
+            self._wait_for_alexa_list_items()
+            list_container = self._get_alexa_list_container()
+            found = self._extract_alexa_list_items(list_container)
             self._validate_empty_alexa_list_result(list_container)
 
         if not refresh:
@@ -395,6 +411,7 @@ class AlexaShoppingList:
     def _get_alexa_list_item_element(self, item: str, ensure_page_ready: bool = True):
         if ensure_page_ready:
             self._prepare_alexa_list_page(False)
+        self._wait_for_alexa_list_items()
         list_container = self.driver.find_element(By.CLASS_NAME, 'virtual-list')
 
         last_text = None

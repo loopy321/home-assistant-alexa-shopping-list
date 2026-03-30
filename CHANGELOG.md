@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 
+## [2603.090.03] - 2026-03-31
+
+### Bug Fixes
+- **False empty Alexa reads** - Added an explicit wait for shopping list items to hydrate before accepting an empty Alexa list, preventing Home Assistant from misreading populated lists as empty after the bulk performance changes.
+
+### Improvements
+- **Safer post-load extraction** - Alexa list reads and item lookups now retry once after hydration before treating the list as truly empty.
+
 ## [2603.090.02] - 2026-03-31
 
 ### Bug Fixes
