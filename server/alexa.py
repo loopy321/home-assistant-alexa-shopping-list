@@ -271,6 +271,25 @@ class AlexaShoppingList:
             self._selenium_wait_element((By.CLASS_NAME, 'virtual-list'))
 
 
+    def _wait_for_alexa_list_ready(self, timeout: int = 10):
+        def _list_ready(driver):
+            self._check_auth_redirect()
+
+            if "/alexaquantum/sp/alexaShoppingList" not in driver.current_url:
+                return False
+
+            containers = driver.find_elements(By.CLASS_NAME, 'virtual-list')
+            headers = driver.find_elements(By.CLASS_NAME, 'list-header')
+            return len(containers) > 0 and len(headers) > 0
+
+        WebDriverWait(self.driver, timeout).until(_list_ready)
+
+
+    def _prepare_alexa_list_page(self, refresh: bool = False):
+        self._ensure_driver_is_on_alexa_list(refresh)
+        self._wait_for_alexa_list_ready()
+
+
     def _get_alexa_list_container(self):
         self._check_auth_redirect()
 
@@ -321,6 +340,15 @@ class AlexaShoppingList:
         return found
 
 
+    def _wait_for_element_staleness(self, element, timeout: int = 5):
+        try:
+            WebDriverWait(self.driver, timeout).until(EC.staleness_of(element))
+            return True
+        except TimeoutException:
+            logger.debug("Timed out waiting for DOM update after list mutation")
+            return False
+
+
     def _validate_empty_alexa_list_result(self, list_container):
         self._check_auth_redirect()
 
@@ -337,8 +365,7 @@ class AlexaShoppingList:
 
 
     def get_alexa_list(self, refresh: bool = True):
-        self._ensure_driver_is_on_alexa_list(refresh)
-        time.sleep(5)
+        self._prepare_alexa_list_page(refresh)
         list_container = self._get_alexa_list_container()
         found = self._extract_alexa_list_items(list_container)
 
@@ -365,9 +392,9 @@ class AlexaShoppingList:
         return found
 
 
-    def _get_alexa_list_item_element(self, item: str):
-        self._ensure_driver_is_on_alexa_list(False)
-        time.sleep(5)
+    def _get_alexa_list_item_element(self, item: str, ensure_page_ready: bool = True):
+        if ensure_page_ready:
+            self._prepare_alexa_list_page(False)
         list_container = self.driver.find_element(By.CLASS_NAME, 'virtual-list')
 
         last_text = None
@@ -407,8 +434,11 @@ class AlexaShoppingList:
         return self._add_alexa_list_item(item, refresh_result=True)
 
 
-    def _add_alexa_list_item(self, item: str, refresh_result: bool = True):
-        element = self._get_alexa_list_item_element(item)
+    def _add_alexa_list_item(self, item: str, refresh_result: bool = True, ensure_page_ready: bool = True):
+        if ensure_page_ready:
+            self._prepare_alexa_list_page(False)
+
+        element = self._get_alexa_list_item_element(item, ensure_page_ready=False)
         if element != None:
             if refresh_result:
                 return self.get_alexa_list(False)
@@ -422,8 +452,9 @@ class AlexaShoppingList:
         submit = self.driver.find_element(By.CLASS_NAME, 'list-header').find_element(By.CLASS_NAME, 'add-to-list').find_element(By.TAG_NAME, 'button')
         submit.click()
 
-        self.driver.find_element(By.CLASS_NAME, 'list-header').find_element(By.CLASS_NAME, 'cancel-input').click()
-        time.sleep(1)
+        cancel_button = self.driver.find_element(By.CLASS_NAME, 'list-header').find_element(By.CLASS_NAME, 'cancel-input')
+        cancel_button.click()
+        self._wait_for_element_staleness(cancel_button)
 
         if refresh_result:
             return self.get_alexa_list(False)
@@ -434,8 +465,11 @@ class AlexaShoppingList:
         return self._update_alexa_list_item(old, new, refresh_result=True)
 
 
-    def _update_alexa_list_item(self, old: str, new: str, refresh_result: bool = True):
-        element = self._get_alexa_list_item_element(old)
+    def _update_alexa_list_item(self, old: str, new: str, refresh_result: bool = True, ensure_page_ready: bool = True):
+        if ensure_page_ready:
+            self._prepare_alexa_list_page(False)
+
+        element = self._get_alexa_list_item_element(old, ensure_page_ready=False)
         if element == None:
             if refresh_result:
                 return self.get_alexa_list(False)
@@ -448,7 +482,7 @@ class AlexaShoppingList:
         textfield.send_keys(new)
 
         element.find_element(By.CLASS_NAME, 'item-actions-2').find_element(By.TAG_NAME, 'button').click()
-        time.sleep(1)
+        self._wait_for_element_staleness(element)
 
         if refresh_result:
             return self.get_alexa_list(False)
@@ -459,12 +493,15 @@ class AlexaShoppingList:
         return self._remove_alexa_list_item(item, refresh_result=True)
 
 
-    def _remove_alexa_list_item(self, item: str, refresh_result: bool = True):
+    def _remove_alexa_list_item(self, item: str, refresh_result: bool = True, ensure_page_ready: bool = True):
         # In large lists, items towards the end are sometimes not found on the first try
         # In cases like these, retry if the element is not found
+        if ensure_page_ready:
+            self._prepare_alexa_list_page(False)
+
         retries = 3
         while retries > 0:
-            element = self._get_alexa_list_item_element(item)
+            element = self._get_alexa_list_item_element(item, ensure_page_ready=False)
             
             if element is None:
                 if refresh_result:
@@ -475,14 +512,14 @@ class AlexaShoppingList:
                 # Find the delete button and click it
                 delete_button = element.find_element(By.CLASS_NAME, 'item-actions-2').find_element(By.TAG_NAME, 'button')
                 delete_button.click()
+                self._wait_for_element_staleness(element)
                 break
             except StaleElementReferenceException:
                 retries -= 1
                 time.sleep(1)
             except Exception as e:
                 return None
-        
-        time.sleep(1)  # Wait for the list to update
+
         if refresh_result:
             return self.get_alexa_list(False)
         return None
@@ -493,17 +530,16 @@ class AlexaShoppingList:
         remove_items = remove_items or []
         update_items = update_items or []
 
-        self._ensure_driver_is_on_alexa_list(False)
-        time.sleep(5)
+        self._prepare_alexa_list_page(False)
 
         for item in add_items:
-            self._add_alexa_list_item(item, refresh_result=False)
+            self._add_alexa_list_item(item, refresh_result=False, ensure_page_ready=False)
 
         for item in remove_items:
-            self._remove_alexa_list_item(item, refresh_result=False)
+            self._remove_alexa_list_item(item, refresh_result=False, ensure_page_ready=False)
 
         for update in update_items:
-            self._update_alexa_list_item(update['old'], update['new'], refresh_result=False)
+            self._update_alexa_list_item(update['old'], update['new'], refresh_result=False, ensure_page_ready=False)
 
         return self.get_alexa_list(False)
 

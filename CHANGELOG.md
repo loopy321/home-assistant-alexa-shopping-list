@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 
+## [2603.090.02] - 2026-03-31
+
+### Bug Fixes
+- **WebSocket keepalive during long syncs** - Moved blocking Selenium shopping list operations off the asyncio event loop so bulk list changes no longer trigger `keepalive ping timeout` disconnects.
+
+### Improvements
+- **DOM-driven list waits** - Replaced the fixed five-second waits around Alexa list loading with explicit page readiness checks before reading or mutating the list.
+- **Single page preparation for bulk operations** - Bulk add/remove/update flows now prepare the Alexa shopping list page once and reuse it across all item mutations.
+
+### Performance
+- **Faster bulk mutations** - Removed per-item five-second delays from bulk shopping list operations, reducing the time needed for larger batches.
+
 ## [2603.090.01] - 2026-03-31
 
 ### Improvements
