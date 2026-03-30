@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 
+## [2603.090.01] - 2026-03-31
+
+### Improvements
+- **Bulk sync session reuse** - When Home Assistant needs to add or remove multiple items in one sync, the custom component now sends a single bulk command so the server can reuse one Chromium session for the whole batch.
+- **Bulk server command** - Added a `bulk_apply_changes` server command that applies grouped add/remove/update operations and refreshes the Alexa list only once at the end.
+
+### Performance
+- **Reduced browser churn** - Bulk shopping list changes no longer open and close Chromium once per item, significantly reducing sync time for larger batches.
+
 ## [2603.090.00] - 2026-03-31
 
 ### Bug Fixes

@@ -404,9 +404,15 @@ class AlexaShoppingList:
 
 
     def add_alexa_list_item(self, item: str):
+        return self._add_alexa_list_item(item, refresh_result=True)
+
+
+    def _add_alexa_list_item(self, item: str, refresh_result: bool = True):
         element = self._get_alexa_list_item_element(item)
         if element != None:
-            return
+            if refresh_result:
+                return self.get_alexa_list(False)
+            return None
 
         self.driver.find_element(By.CLASS_NAME, 'list-header').find_element(By.CLASS_NAME, 'add-symbol').click()
 
@@ -419,13 +425,21 @@ class AlexaShoppingList:
         self.driver.find_element(By.CLASS_NAME, 'list-header').find_element(By.CLASS_NAME, 'cancel-input').click()
         time.sleep(1)
 
-        return self.get_alexa_list(False)
+        if refresh_result:
+            return self.get_alexa_list(False)
+        return None
 
 
     def update_alexa_list_item(self, old: str, new: str):
+        return self._update_alexa_list_item(old, new, refresh_result=True)
+
+
+    def _update_alexa_list_item(self, old: str, new: str, refresh_result: bool = True):
         element = self._get_alexa_list_item_element(old)
         if element == None:
-            return
+            if refresh_result:
+                return self.get_alexa_list(False)
+            return None
 
         element.find_element(By.CLASS_NAME, 'item-actions-1').find_element(By.TAG_NAME, 'button').click()
 
@@ -436,10 +450,16 @@ class AlexaShoppingList:
         element.find_element(By.CLASS_NAME, 'item-actions-2').find_element(By.TAG_NAME, 'button').click()
         time.sleep(1)
 
-        return self.get_alexa_list(False)
+        if refresh_result:
+            return self.get_alexa_list(False)
+        return None
 
 
     def remove_alexa_list_item(self, item: str):
+        return self._remove_alexa_list_item(item, refresh_result=True)
+
+
+    def _remove_alexa_list_item(self, item: str, refresh_result: bool = True):
         # In large lists, items towards the end are sometimes not found on the first try
         # In cases like these, retry if the element is not found
         retries = 3
@@ -447,6 +467,8 @@ class AlexaShoppingList:
             element = self._get_alexa_list_item_element(item)
             
             if element is None:
+                if refresh_result:
+                    return self.get_alexa_list(False)
                 return None
             
             try:
@@ -461,6 +483,28 @@ class AlexaShoppingList:
                 return None
         
         time.sleep(1)  # Wait for the list to update
+        if refresh_result:
+            return self.get_alexa_list(False)
+        return None
+
+
+    def bulk_apply_alexa_list_changes(self, add_items=None, remove_items=None, update_items=None):
+        add_items = add_items or []
+        remove_items = remove_items or []
+        update_items = update_items or []
+
+        self._ensure_driver_is_on_alexa_list(False)
+        time.sleep(5)
+
+        for item in add_items:
+            self._add_alexa_list_item(item, refresh_result=False)
+
+        for item in remove_items:
+            self._remove_alexa_list_item(item, refresh_result=False)
+
+        for update in update_items:
+            self._update_alexa_list_item(update['old'], update['new'], refresh_result=False)
+
         return self.get_alexa_list(False)
 
     # ============================================================
