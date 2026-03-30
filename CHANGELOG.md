@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 
+## [2603.090.00] - 2026-03-31
+
+### Bug Fixes
+- **Empty Alexa list handling** - Fixed an issue where deleting the last remaining Amazon shopping list item could leave a stale cached item in Home Assistant instead of syncing an empty list.
+- **Cache update semantics** - Simplified `_update_cached_list()` so the custom component now trusts successful server responses, including valid empty lists.
+
+### Improvements
+- **Server-side list validation** - Moved empty-list trust checks into `server/alexa.py`, validating the Alexa shopping list page state before accepting an empty scrape result.
+- **Shopping list extraction flow** - Split server-side page validation from list item extraction so ambiguous scrape states raise explicit errors instead of silently returning empty data.
+
 ## [2603.079.10] - 2026-03-21
 
 ### Features
