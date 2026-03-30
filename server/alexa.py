@@ -21,6 +21,11 @@ class NotAuthenticatedError(Exception):
     """Raised when the Amazon session has expired and login is required."""
     pass
 
+
+class InvalidListStateError(Exception):
+    """Raised when the Alexa shopping list page is not in a trustworthy state."""
+    pass
+
 class AlexaShoppingList:
 
     def __init__(self, amazon_url: str = "amazon.co.uk", cookies_path: str = ""):
@@ -266,16 +271,30 @@ class AlexaShoppingList:
             self._selenium_wait_element((By.CLASS_NAME, 'virtual-list'))
 
 
-    def get_alexa_list(self, refresh: bool = True):
-        self._ensure_driver_is_on_alexa_list(refresh)
-        time.sleep(5)
+    def _get_alexa_list_container(self):
+        self._check_auth_redirect()
 
-        list_container = self.driver.find_element(By.CLASS_NAME, 'virtual-list')
+        current_url = self.driver.current_url
+        if "/alexaquantum/sp/alexaShoppingList" not in current_url:
+            raise InvalidListStateError(f"Unexpected Alexa shopping list URL: {current_url}")
 
+        containers = self.driver.find_elements(By.CLASS_NAME, 'virtual-list')
+        if len(containers) == 0:
+            raise InvalidListStateError("Alexa shopping list container not found")
+
+        headers = self.driver.find_elements(By.CLASS_NAME, 'list-header')
+        if len(headers) == 0:
+            raise InvalidListStateError("Alexa shopping list header not found")
+
+        return containers[0]
+
+
+    def _extract_alexa_list_items(self, list_container):
         found = []
         last_text = None
         max_scrolls = 50
         scroll_count = 0
+
         while True:
             try:
                 list_items = list_container.find_elements(By.CLASS_NAME, 'item-title')
@@ -283,19 +302,48 @@ class AlexaShoppingList:
                     text = item.get_attribute('innerText')
                     if text and text not in found:
                         found.append(text)
+
                 current_last_text = list_items[-1].get_attribute('innerText') if list_items else None
                 if not list_items or current_last_text == last_text:
-                    # We've reached the end
                     break
+
                 last_text = current_last_text
                 scroll_count += 1
                 if scroll_count >= max_scrolls:
                     break
+
                 self.driver.execute_script("arguments[0].scrollIntoView();", list_items[-1])
                 time.sleep(1)
             except StaleElementReferenceException:
                 time.sleep(1)
                 continue
+
+        return found
+
+
+    def _validate_empty_alexa_list_result(self, list_container):
+        self._check_auth_redirect()
+
+        current_url = self.driver.current_url
+        if "/alexaquantum/sp/alexaShoppingList" not in current_url:
+            raise InvalidListStateError(f"Unexpected Alexa shopping list URL after scrape: {current_url}")
+
+        if list_container.get_attribute("class") is None:
+            raise InvalidListStateError("Alexa shopping list container became stale")
+
+        headers = self.driver.find_elements(By.CLASS_NAME, 'list-header')
+        if len(headers) == 0:
+            raise InvalidListStateError("Alexa shopping list header missing after empty scrape")
+
+
+    def get_alexa_list(self, refresh: bool = True):
+        self._ensure_driver_is_on_alexa_list(refresh)
+        time.sleep(5)
+        list_container = self._get_alexa_list_container()
+        found = self._extract_alexa_list_items(list_container)
+
+        if len(found) == 0:
+            self._validate_empty_alexa_list_result(list_container)
 
         if not refresh:
             # Now let's scroll back to the top

@@ -109,10 +109,6 @@ class AlexaShoppingListSync:
     def _update_cached_list(self, new_list):
         if new_list is None:
             return
-        if isinstance(new_list, list) and len(new_list) == 0 and len(self._cached_list) > 0:
-            # Don't overwrite a populated cache with an empty list
-            # This prevents accidental data loss from failed scrapes
-            return
         self._cached_list = new_list
         self.last_updated = datetime.datetime.now().astimezone()
     
