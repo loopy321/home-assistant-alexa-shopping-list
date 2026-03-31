@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 
+## [2603.090.03] - 2026-03-31
+
+### Bug Fixes
+- **False empty Alexa reads** - Added an explicit wait for shopping list items to hydrate before accepting an empty Alexa list, preventing Home Assistant from misreading populated lists as empty after the bulk performance changes.
+
+### Improvements
+- **Safer post-load extraction** - Alexa list reads and item lookups now retry once after hydration before treating the list as truly empty.
+
+## [2603.090.02] - 2026-03-31
+
+### Bug Fixes
+- **WebSocket keepalive during long syncs** - Moved blocking Selenium shopping list operations off the asyncio event loop so bulk list changes no longer trigger `keepalive ping timeout` disconnects.
+
+### Improvements
+- **DOM-driven list waits** - Replaced the fixed five-second waits around Alexa list loading with explicit page readiness checks before reading or mutating the list.
+- **Single page preparation for bulk operations** - Bulk add/remove/update flows now prepare the Alexa shopping list page once and reuse it across all item mutations.
+
+### Performance
+- **Faster bulk mutations** - Removed per-item five-second delays from bulk shopping list operations, reducing the time needed for larger batches.
+
+## [2603.090.01] - 2026-03-31
+
+### Improvements
+- **Bulk sync session reuse** - When Home Assistant needs to add or remove multiple items in one sync, the custom component now sends a single bulk command so the server can reuse one Chromium session for the whole batch.
+- **Bulk server command** - Added a `bulk_apply_changes` server command that applies grouped add/remove/update operations and refreshes the Alexa list only once at the end.
+
+### Performance
+- **Reduced browser churn** - Bulk shopping list changes no longer open and close Chromium once per item, significantly reducing sync time for larger batches.
+
 ## [2603.090.00] - 2026-03-31
 
 ### Bug Fixes

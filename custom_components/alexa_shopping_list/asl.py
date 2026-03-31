@@ -159,6 +159,18 @@ class AlexaShoppingListSync:
             self._update_cached_list(self._command_result(response))
         return self._cached_list
 
+
+    async def _bulk_apply_changes(self, add_items=None, remove_items=None, update_items=None):
+        response = await self._send_command(
+            "bulk_apply_changes",
+            add_items=add_items or [],
+            remove_items=remove_items or [],
+            update_items=update_items or []
+        )
+        if self._command_successful(response):
+            self._update_cached_list(self._command_result(response))
+        return self._cached_list
+
     # ============================================================
     # Sync
 
@@ -224,14 +236,17 @@ class AlexaShoppingListSync:
                 
             if item['name'] not in alexa_list:
                 to_add.append(item['name'])
-        
+
         await self._debug_log_entry(logger, "To add to alexa: "+json.dumps(to_add))
-        for item in to_add:
-            await self._add_item(item)
-        
         await self._debug_log_entry(logger, "To remove from alexa: "+json.dumps(to_remove))
-        for item in to_remove:
-            await self._remove_item(item)
+        if len(to_add) + len(to_remove) > 1:
+            await self._debug_log_entry(logger, "Applying Alexa changes in bulk")
+            await self._bulk_apply_changes(add_items=to_add, remove_items=to_remove)
+        else:
+            for item in to_add:
+                await self._add_item(item)
+            for item in to_remove:
+                await self._remove_item(item)
         
         refreshed_items = await self._get_list()
         await self._debug_log_entry(logger, "Refreshed Alexa list: "+json.dumps(refreshed_items))
