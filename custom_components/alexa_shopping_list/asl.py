@@ -142,21 +142,27 @@ class AlexaShoppingListSync:
     async def _add_item(self, item):
         response = await self._send_command("add_item", item=item)
         if self._command_successful(response):
-            self._update_cached_list(self._command_result(response))
+            self.last_updated = None
+        else:
+            raise Exception(self._command_error(response))
         return self._cached_list
     
 
     async def _update_item(self, old, new):
         response = await self._send_command("update_item", old=old, new=new)
         if self._command_successful(response):
-            self._update_cached_list(self._command_result(response))
+            self.last_updated = None
+        else:
+            raise Exception(self._command_error(response))
         return self._cached_list
     
 
     async def _remove_item(self, item):
         response = await self._send_command("remove_item", item=item)
         if self._command_successful(response):
-            self._update_cached_list(self._command_result(response))
+            self.last_updated = None
+        else:
+            raise Exception(self._command_error(response))
         return self._cached_list
 
 
@@ -168,7 +174,9 @@ class AlexaShoppingListSync:
             update_items=update_items or []
         )
         if self._command_successful(response):
-            self._update_cached_list(self._command_result(response))
+            self.last_updated = None
+        else:
+            raise Exception(self._command_error(response))
         return self._cached_list
 
     # ============================================================
@@ -248,8 +256,24 @@ class AlexaShoppingListSync:
             for item in to_remove:
                 await self._remove_item(item)
         
-        refreshed_items = await self._get_list()
+        # Force a fresh scrape after add/remove operations. A mutation response or
+        # cached list can be stale/partial if Amazon's virtualized list is scrolled.
+        refreshed_items = await self._get_list(force=bool(to_add or to_remove))
         await self._debug_log_entry(logger, "Refreshed Alexa list: "+json.dumps(refreshed_items))
+
+        # Defensive guard: after adding/removing items, do not allow an obviously
+        # truncated post-mutation scrape to overwrite Home Assistant's local list.
+        if (to_add or to_remove) and len(refreshed_items) < len(alexa_list) - len(to_remove):
+            await self._debug_log_entry(
+                logger,
+                "Refreshed Alexa list looks truncated; refusing to export to HA. "
+                f"before={len(alexa_list)} "
+                f"refreshed={len(refreshed_items)} "
+                f"to_add={json.dumps(to_add)} "
+                f"to_remove={json.dumps(to_remove)}"
+            )
+            return False
+
         await self._debug_log_entry(logger, "Exporting new HA shopping list")
         await loop.run_in_executor(None, self._export_ha_shopping_list, refreshed_items)
         await self._hasl_refresh()
