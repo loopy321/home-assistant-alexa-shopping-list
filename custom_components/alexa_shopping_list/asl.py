@@ -212,6 +212,44 @@ class AlexaShoppingListSync:
         return hashlib.md5(serialized.encode('utf-8')).hexdigest()
     
 
+    def _sync_state_path(self):
+        return os.path.join(
+            os.path.dirname(self._hasl_path),
+            ".alexa_shopping_list_sync_state.json"
+        )
+
+
+    def _read_last_synced_active_items(self):
+        path = self._sync_state_path()
+        if not os.path.exists(path):
+            return None
+
+        try:
+            with open(path, "r", encoding="utf-8") as file:
+                data = json.load(file)
+            items = data.get("last_synced_active_items")
+            if isinstance(items, list):
+                return items
+        except Exception:
+            pass
+
+        return None
+
+
+    def _write_last_synced_active_items(self, items):
+        path = self._sync_state_path()
+        tmp_path = path + ".tmp"
+        data = {
+            "last_synced_active_items": sorted(set(items), key=str.casefold),
+            "updated_at": datetime.datetime.now().astimezone().isoformat(),
+        }
+
+        with open(tmp_path, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=2)
+
+        os.replace(tmp_path, path)
+    
+
     def _find_ha_list_item(self, find, ha_list):
         for item in ha_list:
             if item['name'] == find:
@@ -234,16 +272,47 @@ class AlexaShoppingListSync:
         alexa_list = await self._get_list(force)
         await self._debug_log_entry(logger, "Alexa list: "+json.dumps(alexa_list))
 
+        last_synced_active_items = await loop.run_in_executor(
+            None,
+            self._read_last_synced_active_items
+        )
+
+        ha_active_names = []
+        ha_completed_names = []
+        for item in ha_list:
+            name = item['name']
+            if item.get('complete') == True:
+                ha_completed_names.append(name)
+            else:
+                ha_active_names.append(name)
+
         to_add = []
         to_remove = []
 
-        for item in ha_list:
-            if item['complete'] == True:
-                if item['name'] in alexa_list:
-                    to_remove.append(item['name'])
-                
-            if item['name'] not in alexa_list:
-                to_add.append(item['name'])
+        for name in ha_completed_names:
+            if name in alexa_list:
+                to_remove.append(name)
+
+        for name in ha_active_names:
+            if name not in alexa_list:
+                to_add.append(name)
+
+        if last_synced_active_items is not None:
+            for name in last_synced_active_items:
+                if (
+                    name in alexa_list
+                    and name not in ha_active_names
+                    and name not in ha_completed_names
+                ):
+                    to_remove.append(name)
+        else:
+            await self._debug_log_entry(
+                logger,
+                "No previous sync snapshot found; not inferring HA deletes on this run"
+            )
+
+        to_add = sorted(set(to_add), key=str.casefold)
+        to_remove = sorted(set(to_remove), key=str.casefold)
 
         await self._debug_log_entry(logger, "To add to alexa: "+json.dumps(to_add))
         await self._debug_log_entry(logger, "To remove from alexa: "+json.dumps(to_remove))
@@ -276,6 +345,7 @@ class AlexaShoppingListSync:
 
         await self._debug_log_entry(logger, "Exporting new HA shopping list")
         await loop.run_in_executor(None, self._export_ha_shopping_list, refreshed_items)
+        await loop.run_in_executor(None, self._write_last_synced_active_items, refreshed_items)
         await self._hasl_refresh()
 
 
