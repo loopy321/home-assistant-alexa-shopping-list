@@ -286,6 +286,8 @@ class AlexaShoppingListSync:
             else:
                 ha_active_names.append(name)
 
+        last_synced_active_names = set(last_synced_active_items or [])
+        alexa_removed_names = []
         to_add = []
         to_remove = []
 
@@ -295,7 +297,10 @@ class AlexaShoppingListSync:
 
         for name in ha_active_names:
             if name not in alexa_list:
-                to_add.append(name)
+                if name in last_synced_active_names:
+                    alexa_removed_names.append(name)
+                else:
+                    to_add.append(name)
 
         if last_synced_active_items is not None:
             for name in last_synced_active_items:
@@ -313,9 +318,16 @@ class AlexaShoppingListSync:
 
         to_add = sorted(set(to_add), key=str.casefold)
         to_remove = sorted(set(to_remove), key=str.casefold)
+        alexa_removed_names = sorted(set(alexa_removed_names), key=str.casefold)
 
         await self._debug_log_entry(logger, "To add to alexa: "+json.dumps(to_add))
         await self._debug_log_entry(logger, "To remove from alexa: "+json.dumps(to_remove))
+        if alexa_removed_names:
+            await self._debug_log_entry(
+                logger,
+                "Previously synced items missing from Alexa; treating as Alexa-side completed/removed: "
+                + json.dumps(alexa_removed_names)
+            )
         if len(to_add) + len(to_remove) > 1:
             await self._debug_log_entry(logger, "Applying Alexa changes in bulk")
             await self._bulk_apply_changes(add_items=to_add, remove_items=to_remove)
