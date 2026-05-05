@@ -12,8 +12,6 @@ import time
 import json
 import os
 import logging
-import urllib.error
-import urllib.request
 
 logger = logging.getLogger(__name__)
 
@@ -409,14 +407,6 @@ class AlexaShoppingList:
         return found
 
 
-    def _cookie_header(self):
-        return "; ".join(
-            f"{cookie['name']}={cookie['value']}"
-            for cookie in self.driver.get_cookies()
-            if cookie.get("name") and cookie.get("value")
-        )
-
-
     def _parse_getlistitems_response(self, data):
         shopping_list = None
 
@@ -456,28 +446,42 @@ class AlexaShoppingList:
 
     def get_alexa_list_items(self):
         self._prepare_alexa_list_page(refresh=True)
+        self.driver.set_script_timeout(45)
 
-        url = "https://www."+self.amazon_url+"/alexashoppinglists/api/getlistitems"
-        request = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": self.user_agent,
-                "Accept": "application/json, text/plain, */*",
-                "Referer": "https://www."+self.amazon_url+"/alexaquantum/sp/alexaShoppingList",
-                "Cookie": self._cookie_header(),
-            },
-        )
+        response = self.driver.execute_async_script("""
+            const done = arguments[arguments.length - 1];
+            fetch('/alexashoppinglists/api/getlistitems', {
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json, text/plain, */*'
+                }
+            })
+            .then(async response => done({
+                ok: response.ok,
+                status: response.status,
+                contentType: response.headers.get('content-type'),
+                url: response.url,
+                body: await response.text()
+            }))
+            .catch(error => done({
+                ok: false,
+                error: String(error)
+            }));
+        """)
 
-        try:
-            with urllib.request.urlopen(request, timeout=30) as response:
-                content_type = response.headers.get("content-type", "")
-                body = response.read().decode("utf-8")
-        except urllib.error.HTTPError as e:
-            body = e.read().decode("utf-8", errors="replace")
+        if not isinstance(response, dict):
+            raise InvalidListStateError("Alexa shopping-list API fetch returned an invalid response")
+
+        body = response.get("body") or ""
+        if response.get("ok") is not True:
             raise InvalidListStateError(
-                f"Alexa shopping-list API returned HTTP {e.code}: {body[:200]}"
+                "Alexa shopping-list API fetch failed: "
+                f"status={response.get('status')} "
+                f"error={response.get('error')} "
+                f"body={body[:200]}"
             )
 
+        content_type = response.get("contentType") or ""
         if "application/json" not in content_type:
             raise InvalidListStateError(
                 f"Alexa shopping-list API returned non-JSON content type: {content_type}"
