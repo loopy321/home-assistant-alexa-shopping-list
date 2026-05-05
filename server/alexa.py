@@ -12,6 +12,8 @@ import time
 import json
 import os
 import logging
+import urllib.error
+import urllib.request
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,7 @@ class AlexaShoppingList:
     def __init__(self, amazon_url: str = "amazon.co.uk", cookies_path: str = ""):
         self.amazon_url = amazon_url
         self.cookies_path = cookies_path
+        self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
         self._setup_driver()
 
 
@@ -99,8 +102,6 @@ class AlexaShoppingList:
 
 
     def _setup_driver(self):
-        user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
-
         chrome_options = Options()
         # Keep headless mode always enabled inside containerized environments.
         # Debug mode only controls verbosity/log output, not headed execution.
@@ -110,7 +111,7 @@ class AlexaShoppingList:
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument(f"--user-agent={user_agent}")
+        chrome_options.add_argument(f"--user-agent={self.user_agent}")
 
         if self._is_debug_mode():
             debug_log_path = self._debug_log_path()
@@ -406,6 +407,83 @@ class AlexaShoppingList:
                     continue
 
         return found
+
+
+    def _cookie_header(self):
+        return "; ".join(
+            f"{cookie['name']}={cookie['value']}"
+            for cookie in self.driver.get_cookies()
+            if cookie.get("name") and cookie.get("value")
+        )
+
+
+    def _parse_getlistitems_response(self, data):
+        shopping_list = None
+
+        for list_data in data.values():
+            if not isinstance(list_data, dict):
+                continue
+
+            list_info = list_data.get("listInfo") or {}
+            if list_info.get("listType") == "SHOPPING_LIST" or list_info.get("defaultList") is True:
+                shopping_list = list_data
+                break
+
+        if shopping_list is None:
+            raise InvalidListStateError("Alexa shopping-list API response did not include a shopping list")
+
+        items = []
+        for item in shopping_list.get("listItems") or []:
+            item_id = item.get("id")
+            name = item.get("value")
+            list_id = item.get("listId")
+
+            if not item_id or not name or not list_id:
+                continue
+
+            items.append({
+                "id": item_id,
+                "list_id": list_id,
+                "name": name,
+                "complete": bool(item.get("completed")),
+                "version": item.get("version"),
+                "created_at": item.get("createdDateTime"),
+                "updated_at": item.get("updatedDateTime"),
+            })
+
+        return items
+
+
+    def get_alexa_list_items(self):
+        self._prepare_alexa_list_page(refresh=True)
+
+        url = "https://www."+self.amazon_url+"/alexashoppinglists/api/getlistitems"
+        request = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": self.user_agent,
+                "Accept": "application/json, text/plain, */*",
+                "Referer": "https://www."+self.amazon_url+"/alexaquantum/sp/alexaShoppingList",
+                "Cookie": self._cookie_header(),
+            },
+        )
+
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                content_type = response.headers.get("content-type", "")
+                body = response.read().decode("utf-8")
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="replace")
+            raise InvalidListStateError(
+                f"Alexa shopping-list API returned HTTP {e.code}: {body[:200]}"
+            )
+
+        if "application/json" not in content_type:
+            raise InvalidListStateError(
+                f"Alexa shopping-list API returned non-JSON content type: {content_type}"
+            )
+
+        return self._parse_getlistitems_response(json.loads(body))
 
 
     def _get_alexa_list_item_element(self, item: str, ensure_page_ready: bool = True):

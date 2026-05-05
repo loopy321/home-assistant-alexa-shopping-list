@@ -228,6 +228,26 @@ async def _cmd_get_shopping_list():
     return result
 
 
+async def _cmd_get_shopping_list_items():
+    try:
+        instance = _start_alexa()
+        requires_login = await asyncio.to_thread(instance.requires_login)
+        if requires_login:
+            result = None, "Not authenticated"
+        else:
+            result = await asyncio.to_thread(instance.get_alexa_list_items), None
+    except NotAuthenticatedError as e:
+        logger.warning(f"Session expired during get_list_items: {e}")
+        _set_config_value("auth_checked_time", 0)
+        result = None, "Not authenticated"
+    except Exception as e:
+        logger.error(f"Error getting shopping list items: {e}", exc_info=True)
+        result = None, _friendly_exception_message(e, "get_list_items")
+    finally:
+        _stop_alexa()
+    return result
+
+
 async def _cmd_get_add_shopping_list_item(args):
     try:
         instance = _start_alexa()
@@ -337,6 +357,8 @@ async def _route_command(command, arguments={}):
     # Shopping list
     if command == "get_list":
         return await _cmd_get_shopping_list()
+    if command == "get_list_items":
+        return await _cmd_get_shopping_list_items()
     if command == "add_item":
         return await _cmd_get_add_shopping_list_item(arguments)
     if command == "update_item":
